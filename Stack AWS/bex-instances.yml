@@ -1,0 +1,69 @@
+#AWS template - bex-instances
+Resources:
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: BexExam
+      GroupName: bex-sg
+      VpcId: bex-vpc
+
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 0
+        ToPort: 65535
+        CidrIp: X.X.X.X/32
+        Description: 'office ip'
+        
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 0
+        ToPort: 65535
+        CidrIp: 0.0.0.0/0
+      
+  FrontendInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.small
+      ImageId: ami-0d1cd67c26f5fca19
+      KeyName: bex-front
+      Monitoring: true
+      SecurityGroupIds:
+      - !Ref InstanceSecurityGroup
+      SubnetId: bex-sub1
+      Tags:
+      - Key: Name
+        Value: bex-front
+      - Key: ClientCost
+        Value: meu
+
+  BackendInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.small
+      ImageId: ami-0d1cd67c26f5fca19
+      KeyName: bex-back
+      Monitoring: true
+      SecurityGroupIds:
+      - !Ref InstanceSecurityGroup
+      SubnetId: bex-sub1
+      Tags:
+      - Key: Name
+        Value: bex-back
+      - Key: ClientCost
+        Value: meu
+        
+  JenkinsInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.small
+      ImageId: ami-0d1cd67c26f5fca19
+      KeyName: bex-back
+      Monitoring: true
+      SecurityGroupIds:
+      - !Ref InstanceSecurityGroup
+      SubnetId: bex-sub2
+      Tags:
+      - Key: Name
+        Value: bex-jenkins
+      - Key: ClientCost
+        Value: meu 

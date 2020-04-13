@@ -1,0 +1,109 @@
+    # Usage:
+    #   aws cloudformation --region <region> create-stack --stack-name <stack name> --template-body file://vpc-fargate.yaml
+    
+    # This template will:
+    #   Create a VPC with:
+    #       2 Public Subnets
+    #   An Internet Gateway (with routes to it for Public Subnets)
+    #   A NAT Gateway for outbound access (with routes from Private Subnets set to use it)
+    #     
+    Resources:
+      PubPrivateVPC:
+        Type: 'AWS::EC2::VPC'
+        Properties:
+          CidrBlock: 10.1.0.0/16
+          Tags:
+            - Key: Name
+              Value: bex-vpc
+            - Key: ClientCost
+              Value: meu
+     
+      PublicSubnet1:
+        Type: 'AWS::EC2::Subnet'
+        Properties:
+          VpcId: !Ref PubPrivateVPC
+          AvailabilityZone: us-west-2a
+          CidrBlock: 10.1.1.0/24
+          MapPublicIpOnLaunch: true
+          Tags:
+            - Key: Name
+              Value: bex-sub1
+            - Key: ClientCost
+              Value: meu     
+              
+      PublicSubnet2:
+        Type: 'AWS::EC2::Subnet'
+        Properties:
+          VpcId: !Ref PubPrivateVPC
+          AvailabilityZone: us-west-2a
+          CidrBlock: 10.1.2.0/24
+          MapPublicIpOnLaunch: true
+          Tags:
+            - Key: Name
+              Value: bex-sub2
+            - Key: ClientCost
+              Value: meu
+              
+      InternetGateway:
+        Type: 'AWS::EC2::InternetGateway'
+        Properties:
+          Tags:
+            - Key: Name
+              Value: bex-igw
+            - Key: Network
+              Value: Public
+            - Key: ClientCost
+              Value: meu
+                        
+      GatewayToInternet:
+        Type: 'AWS::EC2::VPCGatewayAttachment'
+        Properties:
+          VpcId: !Ref PubPrivateVPC
+          InternetGatewayId: !Ref InternetGateway
+      
+      PublicRouteTable:
+        Type: 'AWS::EC2::RouteTable'
+        Properties:
+          VpcId: !Ref PubPrivateVPC
+          Tags:
+            - Key: Network
+              Value: Public
+            - Key: ClientCost
+              Value: meu
+            - Key: Name
+              Value: bex-rtb
+            
+      PublicRoute:
+        Type: 'AWS::EC2::Route'
+        DependsOn: GatewayToInternet
+        Properties:
+          RouteTableId: !Ref PublicRouteTable
+          DestinationCidrBlock: 0.0.0.0/0
+          GatewayId: !Ref InternetGateway
+     
+      PublicSubnet1RouteTableAssociation:
+        Type: 'AWS::EC2::SubnetRouteTableAssociation'
+        Properties:
+          SubnetId: !Ref PublicSubnet1
+          RouteTableId: !Ref PublicRouteTable
+            
+      NatPublicIP:
+        Type: "AWS::EC2::EIP"
+        DependsOn: PubPrivateVPC
+        Properties:
+          Domain: vpc    
+          
+      NatGateway:
+        Type: "AWS::EC2::NatGateway"
+        DependsOn: NatPublicIP
+        Properties: 
+          AllocationId: !GetAtt NatPublicIP.AllocationId
+          SubnetId: !Ref PublicSubnet1
+          Tags:
+            - Key: Name
+              Value: bex-natgtw
+            - Key: ClientCost
+              Value: meu
+    
+
+         
